@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>睡前呼吸跟练</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,400&family=Noto+Sans+SC:wght@400;500&family=Noto+Serif+SC:wght@500;600&display=swap">
+<style>
+/* Layout: one quiet screen at a time on a night ground; a single breathing moon carries the rhythm */
+:root{
+  --night:#121B19;
+  --surface:#1A2522;
+  --line:#2E3C37;
+  --ink:#EEE7DA;
+  --muted:#A8A08F;
+  --moon:#E3A47C;
+  --moon-hi:#F3CBA5;
+  --moon-deep:#B5744C;
+  --moon-glow:rgba(227,164,124,.20);
+  --on-moon:#20302A;
+  --display:'Noto Serif SC','Songti SC','STSong',serif;
+  --body:'Noto Sans SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  --latin:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  background:var(--night);color:var(--ink);font-family:var(--body);
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  -webkit-tap-highlight-color:transparent;
+  -webkit-user-select:none;user-select:none;
+}
+.app{height:100%;max-width:440px;margin:0 auto;display:flex;flex-direction:column}
+.screen{flex:1;min-height:0;display:flex;flex-direction:column;overflow-y:auto;padding-block:20px 8px;gap:22px}
+button{font-family:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible{outline:2px solid var(--moon);outline-offset:3px}
+button:disabled{opacity:.3;cursor:default}
+
+.eyebrow{font-size:13px;letter-spacing:.22em;color:var(--muted);margin:0}
+h1{font-family:var(--display);font-weight:600;font-size:32px;line-height:1.2;margin:6px 0 0;text-wrap:balance}
+.head{text-align:center}
+
+/* the breathing moon */
+.stage{position:relative;aspect-ratio:1;max-width:100%;display:grid;place-items:center;margin:0 auto}
+.stage.sm{width:150px}
+.stage.lg{width:min(80vw, 330px)}
+.ring{position:absolute;inset:0;border-radius:50%;border:1px dashed var(--line)}
+.ring.inner{inset:29%;border-style:solid}
+.moon{
+  position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle at 38% 32%, var(--moon-hi), var(--moon) 58%, var(--moon-deep));
+  box-shadow:0 0 70px 8px var(--moon-glow);
+  transform:scale(.42);will-change:transform,opacity;
+}
+.center{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--on-moon);pointer-events:none}
+.stage.sm .center span{font-family:var(--display);font-size:22px;font-weight:600}
+#phase{font-family:var(--display);font-size:44px;font-weight:600;line-height:1}
+#count{font-family:var(--latin);font-weight:500;font-size:32px;line-height:1;font-variant-numeric:tabular-nums;transition:opacity 1.6s ease}
+#count.gone{opacity:0}
+.stage.paused .moon{opacity:.45!important}
+
+/* setup controls */
+.panel{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:6px;border-bottom:1px solid var(--line)}
+.lbl{font-size:15px;color:var(--muted)}
+.stepper{display:flex;align-items:center;gap:10px}
+.stepper button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);font-size:22px;line-height:1;display:grid;place-items:center}
+.stepper button:not(:disabled):active{background:var(--surface)}
+.val{display:flex;align-items:baseline;gap:4px;min-width:64px;justify-content:center}
+.val output{font-family:var(--latin);font-weight:500;font-size:38px;line-height:1;font-variant-numeric:tabular-nums}
+.val .unit{font-size:14px;color:var(--muted)}
+.ratio{margin:0;font-size:14px;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
+.field{display:flex;flex-direction:column;gap:8px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--surface);border-radius:14px;padding:4px}
+.seg button{padding:11px 4px;border-radius:10px;font-size:15px;color:var(--muted)}
+.seg button[aria-checked="true"]{background:var(--moon);color:var(--on-moon);font-weight:500}
+
+.primary{width:100%;min-height:54px;border-radius:27px;background:var(--moon);color:var(--on-moon);font-size:18px;font-weight:500;letter-spacing:.1em}
+.primary:active{background:var(--moon-hi)}
+.ghost{min-height:44px;padding:0 22px;border-radius:22px;border:1px solid var(--line);color:var(--muted);font-size:15px}
+.tip{margin:0;font-size:13px;line-height:1.6;color:var(--muted);text-align:center}
+.sign{font-family:var(--latin);font-style:italic;font-size:17px;color:var(--muted);text-align:center;padding-block:10px 4px;margin-top:auto}
+
+/* prep */
+.prepwrap{flex:1;display:flex;flex-direction:column;justify-content:center;gap:22px}
+.cues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:16px}
+.cues li{font-family:var(--display);font-size:24px;line-height:1.45;font-weight:500;padding-left:22px;position:relative}
+.cues li::before{content:"";position:absolute;left:0;top:.62em;width:8px;height:8px;border-radius:50%;background:var(--moon)}
+.note{margin:0;font-size:14px;line-height:1.6;color:var(--muted)}
+.stack{display:flex;flex-direction:column;align-items:center;gap:12px}
+
+/* practice */
+.practice{justify-content:space-between}
+.meta{margin:0;text-align:center;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.stagewrap{flex:1;display:grid;place-items:center;min-height:0}
+.progress{height:2px;background:var(--line);border-radius:1px;overflow:hidden}
+.progress div{height:100%;background:var(--moon);transform-origin:left;transform:scaleX(0)}
+.controls{display:flex;justify-content:center;gap:14px;padding-bottom:8px}
+
+/* end */
+.endwrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center}
+.rest{position:relative;width:110px;height:110px;border-radius:50%;margin-bottom:18px;
+  background:radial-gradient(circle at 38% 32%, var(--moon-hi), var(--moon) 58%, var(--moon-deep));box-shadow:0 0 60px 6px var(--moon-glow)}
+.endwrap h2{font-family:var(--display);font-weight:600;font-size:34px;margin:0}
+.good{margin:0;font-size:18px;color:var(--ink)}
+.sum{margin:0;font-size:14px;color:var(--muted)}
+
+@media (prefers-reduced-motion: reduce){ #count{transition:none} }
+</style>
+
+<meta name="theme-color" content="#121B19">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="呼吸跟练">
+</head>
+<body>
+<div class="app">
+
+  <section id="setup" class="screen">
+    <header class="head">
+      <p class="eyebrow">睡前 · 坐着练</p>
+      <h1>呼吸跟练</h1>
+    </header>
+
+    <div class="stage sm" aria-hidden="true">
+      <div class="ring"></div><div class="ring inner"></div>
+      <div class="moon" id="pvMoon"></div>
+      <div class="center"><span id="pvLabel">吸</span></div>
+    </div>
+
+    <div class="panel">
+      <div class="row">
+        <span class="lbl" id="inhLbl">吸气</span>
+        <div class="stepper" role="group" aria-labelledby="inhLbl">
+          <button id="inhMinus" aria-label="吸气减少一秒">−</button>
+          <div class="val"><output id="inhVal" aria-live="polite">3</output><span class="unit">秒</span></div>
+          <button id="inhPlus" aria-label="吸气增加一秒">+</button>
+        </div>
+      </div>
+      <div class="row">
+        <span class="lbl" id="exhLbl">呼气</span>
+        <div class="stepper" role="group" aria-labelledby="exhLbl">
+          <button id="exhMinus" aria-label="呼气减少一秒">−</button>
+          <div class="val"><output id="exhVal" aria-live="polite">4</output><span class="unit">秒</span></div>
+          <button id="exhPlus" aria-label="呼气增加一秒">+</button>
+        </div>
+      </div>
+      <p class="ratio" id="ratio">吸呼比 1 : 1.3 · 每分钟约 8.6 次</p>
+    </div>
+
+    <div class="field">
+      <span class="lbl" id="minLbl">时长</span>
+      <div class="seg" role="radiogroup" aria-labelledby="minLbl" id="segMin">
+        <button role="radio" data-v="5" id="min5">5 分钟</button>
+        <button role="radio" data-v="10" id="min10">10 分钟</button>
+        <button role="radio" data-v="15" id="min15">15 分钟</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="lbl" id="sndLbl">声音</span>
+      <div class="seg" role="radiogroup" aria-labelledby="sndLbl" id="segSound">
+        <button role="radio" data-v="ocean" id="sndOcean">海浪</button>
+        <button role="radio" data-v="bowl" id="sndBowl">钵音</button>
+        <button role="radio" data-v="mute" id="sndMute">静音</button>
+      </div>
+    </div>
+
+    <button class="primary" id="startBtn">开始</button>
+    <p class="tip">海浪涨起来时吸气，退下去时呼气。<br>iPhone 请关闭静音键；练习中屏幕会保持常亮。</p>
+    <footer class="sign">Prepared for you by Sally</footer>
+  </section>
+
+  <section id="prep" class="screen" hidden>
+    <div class="prepwrap">
+      <p class="eyebrow">开始之前</p>
+      <ul class="cues">
+        <li>坐稳，背靠好</li>
+        <li>用鼻子呼吸</li>
+        <li>觉得憋，随时正常呼吸一两次，再回来</li>
+      </ul>
+      <p class="note">前 3 分钟圆里会显示秒数，之后数字会隐去，只跟着圆和声音走就好。</p>
+    </div>
+    <div class="stack">
+      <button class="primary" id="readyBtn">准备好了</button>
+      <button class="ghost" id="prepBack">返回</button>
+    </div>
+  </section>
+
+  <section id="practice" class="screen practice" hidden>
+    <p class="meta" id="meta">吸 3 秒 · 呼 4 秒 · 10 分钟</p>
+    <div class="stagewrap">
+      <div class="stage lg" id="stage">
+        <div class="ring"></div><div class="ring inner"></div>
+        <div class="moon" id="moon"></div>
+        <div class="center" aria-live="off"><span id="phase">3</span><span id="count"></span></div>
+      </div>
+    </div>
+    <div class="progress" aria-hidden="true"><div id="bar"></div></div>
+    <div class="controls">
+      <button class="ghost" id="pauseBtn">暂停</button>
+      <button class="ghost" id="stopBtn">结束</button>
+    </div>
+  </section>
+
+  <section id="end" class="screen" hidden>
+    <div class="endwrap">
+      <div class="rest" aria-hidden="true"></div>
+      <h2>可以躺下了</h2>
+      <p class="good">晚安</p>
+      <p class="sum" id="sum"></p>
+    </div>
+    <div class="stack"><button class="ghost" id="backBtn">返回</button></div>
+    <footer class="sign">Prepared for you by Sally</footer>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var KEY = 'sally-breath-v1';
+  var S = { inh:3, exh:4, min:10, sound:'ocean' };
+  try {
+    var saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (saved) {
+      if (saved.inh >= 1 && saved.inh <= 10) S.inh = saved.inh | 0;
+      if (saved.exh >= 1 && saved.exh <= 10) S.exh = saved.exh | 0;
+      if ([5,10,15].indexOf(saved.min) > -1) S.min = saved.min;
+      if (['ocean','bowl','mute'].indexOf(saved.sound) > -1) S.sound = saved.sound;
+    }
+  } catch(e) {}
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} }
+
+  var LO = 0.42, HI = 1;
+  function ease(p){ p = Math.min(1, Math.max(0, p)); return (1 - Math.cos(Math.PI * p)) / 2; }
+  function breath(t, inh, exh){
+    var c = inh + exh; t = ((t % c) + c) % c;
+    if (t < inh) return { phase:0, e:t, dur:inh, s: LO + (HI - LO) * ease(t / inh) };
+    var e = t - inh;
+    return { phase:1, e:e, dur:exh, s: HI - (HI - LO) * ease(e / exh) };
+  }
+
+  /* ---------- screens ---------- */
+  var screens = ['setup','prep','practice','end'];
+  function show(name){ screens.forEach(function(s){ $(s).hidden = (s !== name); }); }
+
+  /* ---------- setup ---------- */
+  var pvT0 = performance.now(), pvRaf = 0;
+  function renderSetup(){
+    $('inhVal').textContent = S.inh; $('exhVal').textContent = S.exh;
+    $('inhMinus').disabled = S.inh <= 1; $('inhPlus').disabled = S.inh >= 10;
+    $('exhMinus').disabled = S.exh <= 1; $('exhPlus').disabled = S.exh >= 10;
+    var r = Math.round(S.exh / S.inh * 10) / 10;
+    var bpm = Math.round(600 / (S.inh + S.exh)) / 10;
+    $('ratio').textContent = '吸呼比 1 : ' + r + ' · 每分钟约 ' + bpm + ' 次';
+    [].forEach.call(document.querySelectorAll('#segMin button'), function(b){ b.setAttribute('aria-checked', String(+b.dataset.v === S.min)); });
+    [].forEach.call(document.querySelectorAll('#segSound button'), function(b){ b.setAttribute('aria-checked', String(b.dataset.v === S.sound)); });
+  }
+  function pvLoop(now){
+    var b = breath((now - pvT0) / 1000, S.inh, S.exh);
+    $('pvMoon').style.transform = 'scale(' + b.s.toFixed(4) + ')';
+    $('pvLabel').textContent = b.phase ? '呼' : '吸';
+    pvRaf = requestAnimationFrame(pvLoop);
+  }
+  function startPreview(){ cancelAnimationFrame(pvRaf); pvT0 = performance.now(); pvRaf = requestAnimationFrame(pvLoop); }
+  function step(key, d){ S[key] = Math.min(10, Math.max(1, S[key] + d)); save(); renderSetup(); pvT0 = performance.now(); }
+  $('inhMinus').onclick = function(){ step('inh', -1); };
+  $('inhPlus').onclick  = function(){ step('inh',  1); };
+  $('exhMinus').onclick = function(){ step('exh', -1); };
+  $('exhPlus').onclick  = function(){ step('exh',  1); };
+  [].forEach.call(document.querySelectorAll('#segMin button'), function(b){ b.onclick = function(){ S.min = +b.dataset.v; save(); renderSetup(); }; });
+  [].forEach.call(document.querySelectorAll('#segSound button'), function(b){ b.onclick = function(){ S.sound = b.dataset.v; save(); renderSetup(); }; });
+
+  /* ---------- audio ---------- */
+  var ctx = null, out = null, chimeBus = null, master = null, ambient = null;
+  function ensureCtx(){
+    if (ctx) return ctx;
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch(e) {}
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    try { ctx = new AC(); } catch(e) { ctx = null; return null; }
+    var comp = ctx.createDynamicsCompressor(); comp.connect(ctx.destination);
+    out = ctx.createGain(); out.gain.value = 0.9; out.connect(comp);
+    chimeBus = ctx.createGain(); chimeBus.gain.value = 1; chimeBus.connect(out);
+    return ctx;
+  }
+  function unlock(){
+    if (!ctx) return;
+    try { if (ctx.state !== 'running') ctx.resume(); } catch(e) {}
+    try { var b = ctx.createBuffer(1, 1, 22050), s = ctx.createBufferSource(); s.buffer = b; s.connect(ctx.destination); s.start(0); } catch(e) {}
+  }
+  function soundOn(){ return ctx && S.sound !== 'mute'; }
+
+  function bowl(freq, when, vol, decay, dest){
+    if (!ctx) return;
+    [[1,1],[1.004,0.5],[2.71,0.32],[5.12,0.11]].forEach(function(p){
+      var o = ctx.createOscillator(), g = ctx.createGain(), d = decay / Math.sqrt(p[0]);
+      o.type = 'sine'; o.frequency.value = freq * p[0];
+      g.gain.setValueAtTime(0.0001, when);
+      g.gain.exponentialRampToValueAtTime(vol * p[1], when + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, when + d);
+      o.connect(g); g.connect(dest); o.start(when); o.stop(when + d + 0.1);
+    });
+  }
+  function tick(when){ bowl(660, when, 0.07, 0.7, chimeBus); }
+  function chimes(when){ bowl(329.63, when, 0.26, 7, chimeBus); bowl(329.63, when + 2.6, 0.22, 7, chimeBus); bowl(293.66, when + 5.2, 0.22, 8, chimeBus); }
+
+  function buildAmbient(kind){
+    master = ctx.createGain(); master.gain.value = 0.0001; master.connect(out);
+    var a = { kind: kind, src: [] };
+    if (kind === 'ocean') {
+      var len = Math.floor(ctx.sampleRate * 6), buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0), last = 0, i;
+      for (i = 0; i < len; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }
+      var drift = d[len - 1] - d[0];
+      for (i = 0; i < len; i++) d[i] -= drift * (i / len);
+      var src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+      var f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 320; f.Q.value = 0.4;
+      var g = ctx.createGain(); g.gain.value = 0.06;
+      src.connect(f); f.connect(g); g.connect(master); src.start();
+      a.src.push(src); a.gain = g.gain; a.freq = f.frequency;
+    } else {
+      var dg = ctx.createGain(); dg.gain.value = 0.03; dg.connect(master);
+      [[130.81,1],[196,0.6],[261.63,0.25]].forEach(function(p){
+        var o = ctx.createOscillator(), og = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = p[0]; og.gain.value = p[1];
+        o.connect(og); og.connect(dg); o.start(); a.src.push(o);
+      });
+      a.gain = dg.gain;
+    }
+    ambient = a;
+  }
+  function stopAmbient(when){ if (!ambient) return; ambient.src.forEach(function(s){ try { s.stop(when); } catch(e) {} }); }
+  function curveTo(param, from, to, when, dur){
+    param.setValueAtTime(from, when);
+    for (var i = 1; i <= 8; i++) { var p = i / 8; param.linearRampToValueAtTime(from + (to - from) * ease(p), when + dur * p); }
+  }
+  function schedulePhase(isInhale, when, dur){
+    if (!ambient) return;
+    if (ambient.kind === 'ocean') {
+      curveTo(ambient.gain, isInhale ? 0.06 : 0.42, isInhale ? 0.42 : 0.06, when, dur);
+      curveTo(ambient.freq, isInhale ? 320 : 1500, isInhale ? 1500 : 320, when, dur);
+    } else {
+      curveTo(ambient.gain, isInhale ? 0.03 : 0.06, isInhale ? 0.06 : 0.03, when, dur);
+      bowl(isInhale ? 392 : 293.66, when, 0.22, Math.max(3, dur + 1.5), master);
+    }
+  }
+
+  /* ---------- wake lock ---------- */
+  var wake = null;
+  function requestWake(){
+    try { if ('wakeLock' in navigator) navigator.wakeLock.request('screen').then(function(w){ wake = w; }).catch(function(){ wake = null; }); } catch(e) {}
+  }
+  function releaseWake(){ try { if (wake) wake.release(); } catch(e) {} wake = null; }
+  document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible' && sess.active) requestWake(); });
+
+  /* ---------- session ---------- */
+  var LEAD = 3.2, LOOK = 3;
+  var sess = { active:false, paused:false, ended:true };
+  function now(){
+    var n = performance.now() / 1000;
+    return (sess.paused ? sess.pausedAt : n) - sess.t0 - sess.pausedTotal;
+  }
+  function phaseStart(k){ return Math.floor(k / 2) * sess.cycle + (k % 2 ? sess.inh : 0); }
+  function phaseDur(k){ return k % 2 ? sess.exh : sess.inh; }
+
+  function scheduleFinalFade(t){
+    sess.fadeScheduled = true;
+    var base = ctx.currentTime - t;
+    var ls = Math.max(t + 0.05, sess.total - sess.cycle);
+    master.gain.setValueAtTime(1, base + ls);
+    master.gain.linearRampToValueAtTime(0.12, base + sess.total);
+    master.gain.exponentialRampToValueAtTime(0.0001, base + sess.total + 1.6);
+    chimes(base + sess.total + 0.6);
+    stopAmbient(base + sess.total + 2);
+  }
+  function scheduler(){
+    if (!sess.active || sess.paused || !soundOn()) return;
+    var t = now();
+    while (sess.next < sess.N * 2 && phaseStart(sess.next) < t + LOOK) {
+      var k = sess.next, when = ctx.currentTime + (phaseStart(k) - t), d = phaseDur(k);
+      if (when < ctx.currentTime + 0.01) { d -= (ctx.currentTime + 0.01 - when); when = ctx.currentTime + 0.01; }
+      if (d > 0.05) schedulePhase(k % 2 === 0, when, d);
+      sess.next++;
+    }
+    if (!sess.fadeScheduled && t > sess.total - sess.cycle - LOOK) scheduleFinalFade(t);
+  }
+
+  function begin(){
+    sess = { active:true, paused:false, ended:false, pausedAt:0, pausedTotal:0,
+      inh:S.inh, exh:S.exh, cycle:S.inh + S.exh, next:0, lastK:-1, fadeScheduled:false, raf:0, timer:0 };
+    sess.N = Math.max(1, Math.round(S.min * 60 / sess.cycle));
+    sess.total = sess.N * sess.cycle;
+    sess.t0 = performance.now() / 1000 + LEAD;
+    if (soundOn()) {
+      buildAmbient(S.sound);
+      var ct = ctx.currentTime;
+      [0,1,2].forEach(function(i){ tick(ct + 0.1 + i); });
+      master.gain.setValueAtTime(0.0001, ct + LEAD);
+      master.gain.exponentialRampToValueAtTime(1, ct + LEAD + 2.5);
+    }
+    $('meta').textContent = '吸 ' + sess.inh + ' 秒 · 呼 ' + sess.exh + ' 秒 · ' + S.min + ' 分钟';
+    $('count').classList.remove('gone'); $('count').textContent = '';
+    $('stage').classList.remove('paused');
+    $('pauseBtn').textContent = '暂停';
+    $('bar').style.transform = 'scaleX(0)';
+    show('practice');
+    sess.timer = setInterval(scheduler, 250); scheduler();
+    sess.raf = requestAnimationFrame(frame);
+  }
+
+  function frame(){
+    if (!sess.active) return;
+    var t = now(), moon = $('moon');
+    if (t >= sess.total) { finish(false); return; }
+    if (t < 0) {
+      moon.style.transform = 'scale(' + LO + ')'; moon.style.opacity = '.8';
+      $('phase').textContent = String(Math.min(3, Math.max(1, Math.ceil(-t - 0.2))));
+      $('count').textContent = '';
+    } else {
+      var b = breath(t, sess.inh, sess.exh);
+      moon.style.transform = 'scale(' + b.s.toFixed(4) + ')';
+      moon.style.opacity = (0.72 + 0.28 * (b.s - LO) / (HI - LO)).toFixed(3);
+      $('phase').textContent = sess.paused ? '停' : (b.phase ? '呼' : '吸');
+      $('count').textContent = String(Math.min(b.dur, Math.floor(b.e) + 1));
+      if (t >= 180) $('count').classList.add('gone');
+      var k = Math.floor(t / sess.cycle) * 2 + b.phase;
+      if (k !== sess.lastK && !sess.paused) { sess.lastK = k; try { if (navigator.vibrate) navigator.vibrate(18); } catch(e) {} }
+      $('bar').style.transform = 'scaleX(' + (t / sess.total).toFixed(4) + ')';
+    }
+    sess.raf = requestAnimationFrame(frame);
+  }
+
+  function finish(early){
+    if (sess.ended) return;
+    sess.ended = true; sess.active = false;
+    cancelAnimationFrame(sess.raf); clearInterval(sess.timer);
+    if (soundOn() && master) {
+      if (sess.paused) { try { ctx.resume(); } catch(e) {} }
+      if (early || !sess.fadeScheduled) {
+        var ct = ctx.currentTime;
+        master.gain.cancelScheduledValues(ct);
+        master.gain.setValueAtTime(Math.max(0.0001, master.gain.value), ct);
+        master.gain.exponentialRampToValueAtTime(0.0001, ct + 1.5);
+        chimes(ct + 0.8);
+        stopAmbient(ct + 2);
+      }
+    }
+    sess.paused = false;
+    releaseWake();
+    $('sum').textContent = '吸 ' + sess.inh + ' 秒 · 呼 ' + sess.exh + ' 秒';
+    show('end');
+  }
+
+  $('startBtn').onclick = function(){
+    save(); cancelAnimationFrame(pvRaf);
+    if (S.sound !== 'mute') { ensureCtx(); unlock(); }
+    requestWake();
+    show('prep');
+  };
+  $('prepBack').onclick = function(){ releaseWake(); show('setup'); startPreview(); };
+  $('readyBtn').onclick = function(){
+    if (S.sound !== 'mute') { ensureCtx(); unlock(); }
+    requestWake();
+    begin();
+  };
+  $('pauseBtn').onclick = function(){
+    if (!sess.active) return;
+    if (!sess.paused) {
+      sess.paused = true; sess.pausedAt = performance.now() / 1000;
+      if (ctx) { try { ctx.suspend(); } catch(e) {} }
+      $('pauseBtn').textContent = '继续'; $('stage').classList.add('paused');
+    } else {
+      sess.pausedTotal += performance.now() / 1000 - sess.pausedAt; sess.paused = false;
+      if (ctx) { try { ctx.resume(); } catch(e) {} }
+      $('pauseBtn').textContent = '暂停'; $('stage').classList.remove('paused');
+    }
+  };
+  $('stopBtn').onclick = function(){ finish(true); };
+  $('backBtn').onclick = function(){ show('setup'); startPreview(); };
+
+  renderSetup();
+  startPreview();
+})();
+</script>
+
+</body>
+</html>
